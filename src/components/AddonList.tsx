@@ -1,26 +1,29 @@
 import PartPriceInput from "./PartPriceInput";
-import { useCalculator } from "../hooks/useCalculator";
+import { useCalculator } from "../context/CalculatorContext";
 
 export default function AddonList() {
-  const { addonKey, setAddonKey, visibleAddons } = useCalculator();
+  const { addonKeys, toggleAddon, visibleAddons } = useCalculator();
 
   return (
     <div className="section">
       <h2>Add-On</h2>
       <div className="radio-row">
-        {visibleAddons.map(a => (
-          <label className="radio option" key={a.key}>
-            <input
-              type="radio"
-              name="addon"
-              value={a.key}
-              checked={addonKey === a.key}
-              onChange={() => setAddonKey(a.key as any)}
-            />
-            {a.label}
-            {addonKey === a.key && a.requiresPart && <PartPriceInput option={a} />}
-          </label>
-        ))}
+        {visibleAddons.map(a => {
+          const checked = addonKeys.includes(a.key as any);
+          return (
+            <label className="radio option" key={a.key}>
+              <input
+                type="checkbox"
+                name={`addon_${a.key}`}
+                value={a.key}
+                checked={checked}
+                onChange={() => toggleAddon(a.key as any)}
+              />
+              {a.label}
+              {checked && a.requiresPart && <PartPriceInput option={a} />}
+            </label>
+          );
+        })}
       </div>
 
       <div style={{ marginTop: "12px", display: "flex", gap: "10px", flexWrap: "wrap" }}>

@@ -1,5 +1,5 @@
-import { hoursFor } from "./hours";
-import type { Device } from "./hours";
+import { pricesFor } from "./prices";
+import type { Device } from "./prices";
 
 export const GST_RATE = 0.05 as const;
 export const LABOR_RATE = 80 as const;
@@ -31,12 +31,24 @@ export function computeTotals(params: {
   servicePart?: number;
   addonPart?: number;
 }) {
-  const hours = hoursFor(params.device, params.serviceKey, params.manualHours);
-  const labor = hours * LABOR_RATE;
+  const price = pricesFor(params.device, params.serviceKey, params.manualHours);
+  const labor = price;
   const parts = (params.servicePart || 0) + (params.addonPart || 0);
   const shipping = parts > 0 ? SHIPPING_FLAT : 0;
   const subtotal = parts + labor + shipping;
   const gst = subtotal * GST_RATE;
   const grand = subtotal + gst;
-  return { hours, labor, parts, shipping, subtotal, gst, grand };
+  return { price, labor, parts, shipping, subtotal, gst, grand };
+}
+
+export function computeTotalsFromPartsAndLabour(params: {
+  price: number;
+  parts: number;
+}) {
+  const labor = params.price;
+  const shipping = params.parts > 0 ? SHIPPING_FLAT : 0;
+  const subtotal = params.parts + labor + shipping;
+  const gst = subtotal * GST_RATE;
+  const grand = subtotal + gst;
+  return { hours: params.price, labor, parts: params.parts, shipping, subtotal, gst, grand };
 }

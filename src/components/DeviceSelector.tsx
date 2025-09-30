@@ -1,4 +1,4 @@
-import { useCalculator } from "../hooks/useCalculator";
+import { useCalculator } from "../context/CalculatorContext";
 
 export default function DeviceSelector() {
   const { device, setDevice } = useCalculator();

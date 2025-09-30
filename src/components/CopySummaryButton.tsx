@@ -1,5 +1,5 @@
 import React from "react";
-import { useCalculator } from "../hooks/useCalculator";
+import { useCalculator } from "../context/CalculatorContext";
 
 export default function CopySummaryButton() {
   const { copySummary } = useCalculator();

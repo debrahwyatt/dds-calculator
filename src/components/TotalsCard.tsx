@@ -1,4 +1,4 @@
-import { useCalculator } from "../hooks/useCalculator";
+import { useCalculator } from "../context/CalculatorContext";
 
 export default function TotalsCard() {
   const { totals } = useCalculator();
@@ -13,7 +13,7 @@ export default function TotalsCard() {
         <div className="row"><span className="label">Shipping</span><span className="val" id="ship">{fmt(totals.shipping)}</span></div>
         <div className="row">
           <span className="label" id="laborLabel">
-            Labor ({totals.hours.toFixed(2)} hour(s) × $80)
+            Labor
           </span>
           <span className="val" id="labor">{fmt(totals.labor)}</span>
         </div>

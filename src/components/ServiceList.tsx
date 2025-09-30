@@ -1,44 +1,44 @@
 import PartPriceInput from "./PartPriceInput";
-import { useCalculator } from "../hooks/useCalculator";
-import { DEFAULT_HOURS } from "../engine/hours";
+import { useCalculator } from "../context/CalculatorContext";
 
 export default function ServiceList() {
   const {
     device,
-    serviceKey,
-    setServiceKey,
+    serviceKeys,
+    toggleService,
     visibleServices,
     manualHours,
     setManualHours,
+    priceForKey,
   } = useCalculator();
-
-  // helper to show preset hours on each service row
-  const hoursFor = (key: string) =>
-    key === "manual" ? "—" : (DEFAULT_HOURS[device]?.[key] ?? 0).toFixed(2) + " hr";
 
   return (
     <div className="section">
       <h2>Service Type</h2>
       <div className="radio-row">
-        {visibleServices.map(s => (
-          <label className="radio option" key={s.key}>
-            <input
-              type="radio"
-              name="service"
-              value={s.key}
-              checked={serviceKey === s.key}
-              onChange={() => setServiceKey(s.key as any)}
-            />
-            {s.label}
-            <span className="muted"> · <span className="svc-hrs" data-svc={s.key}>{hoursFor(s.key)}</span></span>
+        {visibleServices.map(s => {
+          const checked = serviceKeys.includes(s.key as any);
+          const hrs = s.key === "manual" ? "—" : `$${priceForKey(s.key)}`;
+          return (
+            <label className="radio option" key={s.key}>
+              <input
+                type="checkbox"
+                name={`service_${s.key}`}
+                value={s.key}
+                checked={checked}
+                onChange={() => toggleService(s.key as any)}
+              />
+              {s.label}
+              <span className="muted"> · <span className="svc-hrs" data-svc={s.key}>{hrs}</span></span>
 
-            {/* Part input only when this option is selected */}
-            {serviceKey === s.key && s.requiresPart && <PartPriceInput option={s} />}
-          </label>
-        ))}
+              {/* show part input if this box is checked and requires a part */}
+              {checked && s.requiresPart && <PartPriceInput option={s} />}
+            </label>
+          );
+        })}
 
-        {/* Manual hours input */}
-        {serviceKey === "manual" && (
+        {/* Manual hours input when 'manual' is selected */}
+        {serviceKeys.includes("manual" as any) && (
           <div id="manualHoursWrap" style={{ marginTop: "12px" }}>
             <label htmlFor="manualHours">Custom labor hours</label>
             <input

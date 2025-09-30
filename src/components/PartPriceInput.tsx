@@ -1,5 +1,5 @@
 import type { OptionMeta } from "../config/services";
-import { useCalculator } from "../hooks/useCalculator";
+import { useCalculator } from "../context/CalculatorContext";
 
 interface Props {
   option: OptionMeta;
