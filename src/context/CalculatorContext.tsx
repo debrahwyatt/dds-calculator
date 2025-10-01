@@ -1,6 +1,6 @@
 import type { Device } from "../engine/prices";
 import { DEFAULT_PRICES } from "../engine/prices";
-import { SERVICES, ADDONS, defaultPartFor } from "../config/services";
+import { SERVICES, ADDONS, defaultPriceFor } from "../config/services";
 import type { ServiceKey, AddonKey, OptionMeta } from "../config/services";
 import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { etaRangeFromToday, money, computeTotalsFromPartsAndLabour } from "../engine/pricing";
@@ -87,12 +87,17 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
     return sum;
   }, [serviceKeys, device, manualHours]);
 
+  // ===== Add-on labour (fees) =====
+  const addonLabour = useMemo(() => {
+    return selectedAddonMetas.reduce((sum, m) => sum + defaultPriceFor(m, device), 0);
+  }, [selectedAddonMetas, device]);
+
   // ===== Parts sum (services + addons) =====
   const resolvePart = (meta: OptionMeta) => {
     if (!meta.requiresPart) return 0;
     const typed = partInputs[meta.key];
     if (typed != null && typed >= 0) return typed;
-    return defaultPartFor(meta, device);
+    return defaultPriceFor(meta, device);
   };
 
   const totalParts = useMemo(() => {
@@ -103,9 +108,10 @@ export function CalculatorProvider({ children }: { children: React.ReactNode }) 
 
   // ===== Totals & ETA =====
   const totals = useMemo(
-    () => computeTotalsFromPartsAndLabour({ price: totalPrice, parts: totalParts }),
-    [totalPrice, totalParts]
+    () => computeTotalsFromPartsAndLabour({ price: totalPrice + addonLabour, parts: totalParts }),
+    [totalPrice, addonLabour, totalParts]
   );
+
 
   const eta = useMemo(() => {
     const { start, end } = etaRangeFromToday();

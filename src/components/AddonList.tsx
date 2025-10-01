@@ -2,7 +2,7 @@ import PartPriceInput from "./PartPriceInput";
 import { useCalculator } from "../context/CalculatorContext";
 
 export default function AddonList() {
-  const { addonKeys, toggleAddon, visibleAddons } = useCalculator();
+  const { addonKeys, toggleAddon, visibleAddons, priceForKey } = useCalculator();
 
   return (
     <div className="section">
@@ -10,6 +10,7 @@ export default function AddonList() {
       <div className="radio-row">
         {visibleAddons.map(a => {
           const checked = addonKeys.includes(a.key as any);
+          const hrs = a.key === "manual" ? "—" : `$${priceForKey(a.key)}`;
           return (
             <label className="radio option" key={a.key}>
               <input
@@ -20,6 +21,7 @@ export default function AddonList() {
                 onChange={() => toggleAddon(a.key as any)}
               />
               {a.label}
+              <span className="muted"> · <span className="svc-hrs" data-svc={a.key}>{hrs}</span></span>
               {checked && a.requiresPart && <PartPriceInput option={a} />}
             </label>
           );

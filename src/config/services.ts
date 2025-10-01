@@ -31,22 +31,14 @@ export const SERVICES: OptionMeta[] = [
 ];
 
 export const ADDONS: OptionMeta[] = [
-  { key: "screenprotector", label: "Screen Protector", devices: ["mobile"], requiresPart: true, defaultPart: 15, defaultPrice: 0 },
-  { key: "backup",          label: "Data Backup/Transfer", devices: ["pc","laptop","mobile"], defaultPrice: 40 },
+  { key: "screenprotector", label: "Screen Protector", devices: ["mobile"], requiresPart: true, defaultPart: 10, defaultPrice: 10 },
+  { key: "backup",          label: "Data Backup/Transfer", devices: ["pc","laptop","mobile"], requiresPart: false, defaultPrice: 40 },
   { key: "case",            label: "Protective Case", devices: ["mobile"], requiresPart: true, defaultPart: 20, defaultPrice: 0 },
-  { key: "tuneup",          label: "Device Tune-up", devices: ["pc","laptop"], defaultPrice: 35 },
-  { key: "cleaning",        label: "Device Cleaning", devices: ["pc","laptop","mobile"], defaultPrice: 20 },
+  { key: "tuneup",          label: "Device Tune-up", devices: ["pc","laptop", "mobile"], defaultPrice: 60 },
+  { key: "cleaning",        label: "Device Cleaning", devices: ["pc","laptop","mobile"], defaultPrice: 40 },
   { key: "cooling",         label: "Cooling Service", devices: ["pc","laptop"], defaultPrice: 30 },
 ];
 
-
-// Helper to resolve default part number for a device
-export function defaultPartFor(meta: OptionMeta, device: Device): number {
-  const d = meta.defaultPart;
-  if (!d) return 0;
-  if (typeof d === "number") return d;
-  return d[device] ?? 0;
-}
 
 export function defaultPriceFor(meta: OptionMeta, device: Device): number {
   const d = meta.defaultPrice;
