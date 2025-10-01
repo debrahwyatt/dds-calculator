@@ -14,7 +14,8 @@ export type ItemDef = {
   partdefault?: number | Partial<Record<DeviceKey, number>>;
   devices: DeviceKey[];
   teardownGroup?: string;
-  requiresPart?: boolean; // <— NEW: explicit flag for UI
+  requiresPart?: boolean; 
+  teardownIncrementLabour?: number | Partial<Record<DeviceKey, number>>;
 };
 
 export const devices = [
@@ -32,40 +33,50 @@ export function labourFor(item: ItemDef, device: DeviceKey): number {
   const l = item.labour;
   return typeof l === "number" ? l : (l[device] ?? 0);
 }
+export function incrementFor(item: ItemDef, device: DeviceKey): number {
+  const inc = item.teardownIncrementLabour;
+  if (inc == null) return 0;
+  return typeof inc === "number" ? inc : (inc[device] ?? 0);
+}
 
-/* -------- Services & Add-ons (unchanged values, just requiresPart flags added) -------- */
+/* -------- Services & Add-ons -------- */
 
 export const visibleServices: ItemDef[] = [
   {
     key: "diagnostic", label: "Diagnostic Assessment",
     devices: ["pc", "laptop", "mobile"],
-    labour: { pc: 60, laptop: 60, mobile: 50 },
+    labour: { pc: 60, laptop: 60, mobile: 60 },
   },
   {
     key: "osreinstall", label: "OS Recovery/Reinstall",
     devices: ["pc", "laptop"],
-    labour: { pc: 100, laptop: 120 },
+    labour: { pc: 100, laptop: 100 },
   },
   {
     key: "screen", label: "Screen Replacement",
     devices: ["laptop", "mobile"],
-    labour: { laptop: 140, mobile: 100 },
+    labour: { laptop: 150, mobile: 120 },
     partdefault: { laptop: 160, mobile: 75 },
     teardownGroup: "front-open",
-    requiresPart: true, // <—
+    requiresPart: true, 
+    teardownIncrementLabour: { laptop: 75, mobile: 60 },
   },
   {
     key: "battery", label: "Battery Replacement",
     devices: ["laptop", "mobile"],
-    labour: { laptop: 100, mobile: 70 },
+    labour: { laptop: 100, mobile: 140 },
     partdefault: { laptop: 80, mobile: 45 },
     teardownGroup: "front-open",
-    requiresPart: true, // <—
+    requiresPart: true, 
+    teardownIncrementLabour: { laptop: 50, mobile: 70 },
   },
   {
     key: "hardware", label: "Hardware Repair",
     devices: ["pc", "laptop", "mobile"],
-    labour: { pc: 90, laptop: 110, mobile: 90 },
+    labour: { pc: 90, laptop: 110, mobile: 140 },
+    teardownGroup: "front-open",
+    teardownIncrementLabour: { pc: 45, laptop: 55, mobile: 70 },
+
   },
   {
     key: "datarecovery", label: "Data Recovery",
@@ -75,25 +86,28 @@ export const visibleServices: ItemDef[] = [
   {
     key: "backglass", label: "Back Glass Replacement",
     devices: ["mobile"],
-    labour: { mobile: 90 },
-    partdefault: { mobile: 40 },
+    labour: { mobile: 100 },
+    partdefault: { mobile: 15 },
     teardownGroup: "back-open",
-    requiresPart: true, // <—
+    requiresPart: true, 
+    teardownIncrementLabour: { mobile: 50 },
   },
   {
     key: "malware", label: "Virus/Malware Removal",
     devices: ["pc", "laptop"],
-    labour: { pc: 75, laptop: 85 },
+    labour: { pc: 90, laptop: 90 },
   },
   {
     key: "upgrade", label: "System Upgrade",
     devices: ["pc", "laptop"],
-    labour: { pc: 60, laptop: 80 },
+    labour: { pc: 80, laptop: 80 },
+    teardownGroup: "front-open",
+    teardownIncrementLabour: { pc: 40, laptop: 40 },    
   },
   {
     key: "swtroubleshoot", label: "Software Troubleshooting",
     devices: ["pc", "laptop", "mobile"],
-    labour: { pc: 55, laptop: 60, mobile: 50 },
+    labour: { pc: 80, laptop: 80, mobile: 80 },
   },
 ];
 
@@ -103,33 +117,33 @@ export const visibleAddons: ItemDef[] = [
     devices: ["mobile"],
     labour: { mobile: 10 },
     partdefault: { mobile: 10 },
-    requiresPart: true, // <—
+    requiresPart: true, 
   },
   {
     key: "backup", label: "Data Backup/Transfer",
     devices: ["pc", "laptop", "mobile"],
-    labour: { pc: 40, laptop: 40, mobile: 30 },
+    labour: { pc: 40, laptop: 40, mobile: 40 },
   },
   {
     key: "case", label: "Protective Case",
     devices: ["mobile"],
     labour: { mobile: 0 },
-    partdefault: { mobile: 20 },
-    requiresPart: true, // <—
+    partdefault: { mobile: 25 },
+    requiresPart: true, 
   },
   {
     key: "tuneup", label: "Device Tune-up",
     devices: ["pc", "laptop", "mobile"],
-    labour: { pc: 60, laptop: 60, mobile: 40 },
+    labour: { pc: 60, laptop: 60, mobile: 60 },
   },
   {
     key: "cleaning", label: "Device Cleaning",
     devices: ["pc", "laptop", "mobile"],
-    labour: { pc: 40, laptop: 40, mobile: 30 },
+    labour: { pc: 40, laptop: 60, mobile: 40 },
   },
   {
     key: "cooling", label: "Cooling Service",
     devices: ["pc", "laptop"],
-    labour: { pc: 30, laptop: 40 },
+    labour: { pc: 40, laptop: 60 },
   },
 ];

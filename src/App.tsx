@@ -8,6 +8,8 @@ import {
   type ItemDef,
   labourFor,
   partPriceFor,
+  // NEW: teardown increment helper from your config
+  incrementFor,
 } from "./Config/config";
 
 import TotalsCard from "./Components/TotalsCard";
@@ -15,13 +17,8 @@ import ServiceList from "./Components/ServiceList";
 import DeviceSelector from "./Components/DeviceSelector";
 import AddonList from "./Components/AddonList";
 
-const teardownDiscountPerExtra: Record<DeviceKey, number> = {
-  mobile: 40,
-  laptop: 60,
-  pc: 50,
-};
-
 export default function App() {
+  // Initial device from config default or fallback
   const initialDevice: DeviceKey =
     (devices.find(d => (d as any).default)?.key as DeviceKey) ?? "pc";
 
@@ -29,9 +26,12 @@ export default function App() {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
 
-  // NEW: manual part overrides by item key
-  const [partOverrides, setPartOverrides] = useState<Record<string, number | undefined>>({});
+  // Manual part overrides by item key
+  const [partOverrides, setPartOverrides] = useState<
+    Record<string, number | undefined>
+  >({});
 
+  // Filter lists for the chosen device
   const filteredServices = useMemo(
     () => visibleServices.filter((s) => s.devices.includes(device)),
     [device]
@@ -41,62 +41,128 @@ export default function App() {
     [device]
   );
 
-  // prune selections & part overrides on device change (only keep visible items)
+  // Combined pool (lets us compute teardown groups across both lists if needed)
+  const combinedPool = useMemo<ItemDef[]>(
+    () => [...filteredServices, ...filteredAddons],
+    [filteredServices, filteredAddons]
+  );
+
+  // Prune selections & part overrides on device change (only keep visible items)
   useEffect(() => {
-    const allowed = new Set([
-      ...filteredServices.map((s) => s.key),
-      ...filteredAddons.map((a) => a.key),
-    ]);
+    const allowed = new Set(combinedPool.map((i) => i.key));
 
     setSelectedServices((prev) => prev.filter((k) => allowed.has(k)));
     setSelectedAddons((prev) => prev.filter((k) => allowed.has(k)));
+
     setPartOverrides((prev) => {
       const next: Record<string, number | undefined> = {};
       for (const k of Object.keys(prev)) if (allowed.has(k)) next[k] = prev[k];
       return next;
     });
-  }, [device, filteredServices, filteredAddons]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [device, combinedPool]);
 
   const handlePartOverride = (key: string, value?: number) =>
     setPartOverrides((prev) => ({ ...prev, [key]: value }));
 
-  const totalsFrom = (keys: string[], pool: ItemDef[]) =>
-    keys.reduce(
-      (t, key) => {
-        const item = pool.find((i) => i.key === key);
-        if (item) {
-          t.labour += labourFor(item, device);
-          const override = partOverrides[key];
-          const basePart = partPriceFor(item, device);
-          t.parts += override ?? basePart; // override wins
-        }
-        return t;
-      },
-      { labour: 0, parts: 0 }
-    );
+  /* ------------------- Labour & Parts Computations ------------------- */
 
-  const svcTotals = totalsFrom(selectedServices, filteredServices);
-  const addonTotals = totalsFrom(selectedAddons, filteredAddons);
-
-  const labour = svcTotals.labour + addonTotals.labour;
-  const parts = svcTotals.parts + addonTotals.parts;
-
-  function computeTeardownDiscount(keys: string[], pool: ItemDef[], device: DeviceKey): number {
-    const groups = new Map<string, number>();
-    for (const key of keys) {
+  // 1) Naive labour: just sum base labour for selected items
+  function sumBaseLabour(keys: string[], pool: ItemDef[], dev: DeviceKey): number {
+    return keys.reduce((sum, key) => {
       const item = pool.find((i) => i.key === key);
-      if (!item || !item.teardownGroup) continue;
-      groups.set(item.teardownGroup, (groups.get(item.teardownGroup) ?? 0) + 1);
-    }
-    const perExtra = teardownDiscountPerExtra[device] ?? 0;
-    let discount = 0;
-    for (const [, count] of groups) if (count > 1) discount += (count - 1) * perExtra;
-    return discount;
+      return item ? sum + labourFor(item, dev) : sum;
+    }, 0);
   }
 
-  const discount =
-    computeTeardownDiscount(selectedServices, filteredServices, device) +
-    computeTeardownDiscount(selectedAddons, filteredAddons, device);
+  // 2) Grouped labour with teardown sharing:
+  // For each teardownGroup, charge max(base labour) + increments for the remaining items.
+  // Implementation detail: we sum all increments and subtract the largest one
+  // so the "primary" job contributes its base labour instead of its increment.
+  function computeGroupedLabour(keys: string[], pool: ItemDef[], dev: DeviceKey): number {
+    // Group selected items by teardownGroup; ungrouped items get their own solo group
+    const byGroup = new Map<string, ItemDef[]>();
+
+    for (const k of keys) {
+      const item = pool.find((i) => i.key === k);
+      if (!item) continue;
+      const groupKey = item.teardownGroup ?? `__solo__${k}`;
+      const arr = byGroup.get(groupKey) ?? [];
+      arr.push(item);
+      byGroup.set(groupKey, arr);
+    }
+
+    let total = 0;
+
+    for (const [, items] of byGroup) {
+      if (items.length === 1 && !items[0].teardownGroup) {
+        // Ungrouped single item: just its labour
+        total += labourFor(items[0], dev);
+        continue;
+      }
+
+      // Grouped items:
+      // Primary job: the one with the highest base labour
+      let maxLabour = 0;
+      let sumIncrements = 0;
+      let largestIncrement = 0;
+
+      for (const it of items) {
+        const base = labourFor(it, dev);
+        const inc = incrementFor(it, dev);
+        if (base > maxLabour) maxLabour = base;
+        sumIncrements += inc;
+        if (inc > largestIncrement) largestIncrement = inc;
+      }
+
+      // Charge base of the primary + increments for the rest
+      total += maxLabour + (sumIncrements - largestIncrement);
+    }
+
+    return total;
+  }
+
+  // 3) Parts with manual overrides (override wins)
+  function computeParts(
+    keys: string[],
+    pool: ItemDef[],
+    dev: DeviceKey,
+    overrides: Record<string, number | undefined>
+  ): number {
+    return keys.reduce((sum, key) => {
+      const item = pool.find((i) => i.key === key);
+      if (!item) return sum;
+      const override = overrides[key];
+      const base = partPriceFor(item, dev);
+      return sum + (override ?? base);
+    }, 0);
+  }
+
+  // Selections (combined for labour discount and parts)
+  const allSelectedKeys = useMemo(
+    () => [...selectedServices, ...selectedAddons],
+    [selectedServices, selectedAddons]
+  );
+
+  // Labour: naive vs grouped (to compute bundle savings)
+  const naiveLabour =
+    sumBaseLabour(allSelectedKeys, combinedPool, device);
+
+  const groupedLabour =
+    computeGroupedLabour(allSelectedKeys, combinedPool, device);
+
+  // Bundle savings shown as a "Discount" line
+  const discount = Math.max(0, naiveLabour - groupedLabour);
+
+  // Use grouped labour as the actual labour billed
+  const labour = groupedLabour;
+
+  // Parts
+  const parts =
+    computeParts(selectedServices, filteredServices, device, partOverrides) +
+    computeParts(selectedAddons, filteredAddons, device, partOverrides);
+
+  /* ----------------------------- Render ------------------------------ */
 
   return (
     <div className="app">
