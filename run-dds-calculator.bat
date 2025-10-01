@@ -1,6 +1,6 @@
 @echo off
 REM Change to your project directory
-cd /d D:\Desktop\New folder\dds-calculator
+cd /d D:\Documents\Debrahs Digital Solutions\dds-calculator
 
 REM Start the preview server (serves dist). Use dev if you prefer.
 npm run preview
