@@ -1,28 +1,20 @@
-import { useCalculator } from "../context/CalculatorContext";
+// Components/DeviceSelector.tsx
+import { devices, type DeviceKey } from "../Config/config";
+import Device from "./Device";
 
-export default function DeviceSelector() {
-  const { device, setDevice } = useCalculator();
-  const devices = [
-    { key: "pc", label: "PC / Desktop" },
-    { key: "laptop", label: "Laptop" },
-    { key: "mobile", label: "Mobile" },
-  ] as const;
-
+export default function DeviceSelector({
+  value,
+  onChange,
+}: {
+  value: DeviceKey;
+  onChange: (v: DeviceKey) => void;
+}) {
   return (
-    <div className="section">
+    <div>
       <h2>Device Type</h2>
-      <div className="radio-row">
-        {devices.map(d => (
-          <label className="radio" key={d.key}>
-            <input
-              type="radio"
-              name="devtype"
-              value={d.key}
-              checked={device === d.key}
-              onChange={() => setDevice(d.key as any)}
-            />
-            {d.label}
-          </label>
+      <div>
+        {devices.map((d) => (
+          <Device key={d.key} device={d} checked={value === d.key} onChange={onChange} />
         ))}
       </div>
     </div>
