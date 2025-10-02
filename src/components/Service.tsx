@@ -1,7 +1,6 @@
-// Components/Service.tsx
 import { useState } from "react";
 import type { ItemDef, DeviceKey } from "../Config/config";
-import { labourFor, partPriceFor } from "../Config/config";
+import { partPriceFor } from "../Config/config";
 import ServiceDetails from "./ServiceDetails";
 
 export default function Service({
@@ -20,7 +19,6 @@ export default function Service({
   onPartChange?: (key: string, value?: number) => void;
 }) {
   const { key, label } = service;
-  const labour = labourFor(service, device);
 
   const defaultPart = partPriceFor(service, device);
   const effectivePart = partValue ?? defaultPart;

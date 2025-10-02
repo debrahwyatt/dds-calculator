@@ -76,17 +76,17 @@ export default function App() {
   }
 
   // 2) Grouped labour with teardown sharing:
-  // For each teardownGroup, charge max(base labour) + increments for the remaining items.
+  // For each discountGroup, charge max(base labour) + increments for the remaining items.
   // Implementation detail: we sum all increments and subtract the largest one
   // so the "primary" job contributes its base labour instead of its increment.
   function computeGroupedLabour(keys: string[], pool: ItemDef[], dev: DeviceKey): number {
-    // Group selected items by teardownGroup; ungrouped items get their own solo group
+    // Group selected items by discountGroup; ungrouped items get their own solo group
     const byGroup = new Map<string, ItemDef[]>();
 
     for (const k of keys) {
       const item = pool.find((i) => i.key === k);
       if (!item) continue;
-      const groupKey = item.teardownGroup ?? `__solo__${k}`;
+      const groupKey = item.discountGroup ?? `__solo__${k}`;
       const arr = byGroup.get(groupKey) ?? [];
       arr.push(item);
       byGroup.set(groupKey, arr);
@@ -95,7 +95,7 @@ export default function App() {
     let total = 0;
 
     for (const [, items] of byGroup) {
-      if (items.length === 1 && !items[0].teardownGroup) {
+      if (items.length === 1 && !items[0].discountGroup) {
         // Ungrouped single item: just its labour
         total += labourFor(items[0], dev);
         continue;
@@ -166,6 +166,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <h1>Service Calculator</h1>
       <DeviceSelector value={device} onChange={setDevice} />
 
       <ServiceList

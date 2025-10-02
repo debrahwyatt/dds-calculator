@@ -13,11 +13,11 @@ export type ItemDef = {
   desc?: string;  
   label: string;
   devices: DeviceKey[];
-  teardownGroup?: string;
+  discountGroup?: string;
   requiresPart?: boolean; 
   labour: number | Partial<Record<DeviceKey, number>>;
   partdefault?: number | Partial<Record<DeviceKey, number>>;  
-  teardownIncrementLabour?: number | Partial<Record<DeviceKey, number>>;  
+  discountPrice?: number | Partial<Record<DeviceKey, number>>;  
 };
 
 export const devices = [
@@ -36,7 +36,7 @@ export function labourFor(item: ItemDef, device: DeviceKey): number {
   return typeof l === "number" ? l : (l[device] ?? 0);
 }
 export function incrementFor(item: ItemDef, device: DeviceKey): number {
-  const inc = item.teardownIncrementLabour;
+  const inc = item.discountPrice;
   if (inc == null) return 0;
   return typeof inc === "number" ? inc : (inc[device] ?? 0);
 }
@@ -49,87 +49,98 @@ export const visibleServices: ItemDef[] = [
     devices: ["pc", "laptop", "mobile"],
     labour: { pc: 60, laptop: 60, mobile: 60 },
     desc: "Full device inspection to identify hardware/software issues and provide a repair plan.",
-    eta: "30–60 min",    
+    eta: "45 min",    
   },
   {
     key: "osreinstall", label: "OS Recovery/Reinstall",
     devices: ["pc", "laptop"],
     labour: { pc: 100, laptop: 100 },
-    desc: "Backup (if requested), wipe/repair, reinstall OS, drivers, and core updates.",
-    eta: "2–3 hours",    
+    desc: "Backup data, wipe/repair drive, reinstall OS, drivers, and core updates, put user data back.",
+    eta: "SSD: 2-3 hours, HDD: 1-2 days",    
   },
   {
     key: "screen", label: "Screen Replacement",
     devices: ["laptop", "mobile"],
     labour: { laptop: 150, mobile: 120 },
     partdefault: { laptop: 160, mobile: 75 },
-    teardownGroup: "front-open",
+    discountGroup: "open",
     requiresPart: true, 
-    teardownIncrementLabour: { laptop: 75, mobile: 60 },
+    discountPrice: { laptop: 75, mobile: 60 },
     desc: "Replace cracked or unresponsive display assembly and test touch, brightness, and cameras.",
-    eta: "1.5–3 hours (after parts arrive)",    
+    eta: "Laptop: 3 hours, Mobile: 24 hours",
   },
   {
     key: "battery", label: "Battery Replacement",
     devices: ["laptop", "mobile"],
     labour: { laptop: 100, mobile: 140 },
     partdefault: { laptop: 80, mobile: 45 },
-    teardownGroup: "front-open",
+    discountGroup: "open",
     requiresPart: true, 
-    teardownIncrementLabour: { laptop: 50, mobile: 70 },
-    desc: "Remove old battery, install new OEM/grade-A unit, and verify charge/health.",
-    eta: "1–2 hours (after parts arrive)",    
+    discountPrice: { laptop: 50, mobile: 70 },
+    desc: "Remove old battery, install new unit, and verify charge/health.",
+    eta: "Laptop: 1-2 hour, Mobile: 24 hours",    
   },
   {
     key: "hardware", label: "Hardware Repair",
     devices: ["pc", "laptop", "mobile"],
     labour: { pc: 90, laptop: 110, mobile: 140 },
-    teardownGroup: "front-open",
-    teardownIncrementLabour: { pc: 45, laptop: 55, mobile: 70 },
+    discountGroup: "open",
+    discountPrice: { pc: 45, laptop: 55, mobile: 70 },
     desc: "Diagnose/replace failing components (keyboards, fans, ports, storage, etc.).",
-    eta: "2–4 hours (varies by part availability)",
+    eta: "2-4 hours (varies by part)",
   },
   {
     key: "datarecovery", label: "Data Recovery",
     devices: ["pc", "laptop", "mobile"],
     labour: { pc: 150, laptop: 160, mobile: 120 },
-    desc: "Attempt to recover files from failing drives/phones. No data, no labour charge on basic attempts.",
-    eta: "Same day to 3 days (case-dependent)",    
+    desc: "Attempt to recover files from failing drives/phones. No charge for unsuccessful attempts.",
+    eta: "1-3 days (case-dependent)",    
   },
   {
     key: "backglass", label: "Back Glass Replacement",
     devices: ["mobile"],
     labour: { mobile: 100 },
     partdefault: { mobile: 15 },
-    teardownGroup: "back-open",
+    discountGroup: "open",
     requiresPart: true, 
-    teardownIncrementLabour: { mobile: 50 },
+    discountPrice: { mobile: 50 },
     desc: "Replace shattered rear glass and verify cameras/wireless charging function.",
-    eta: "1–2 hours (after parts arrive)",    
+    eta: "24 hours",    
   },
   {
     key: "malware", label: "Virus/Malware Removal",
     devices: ["pc", "laptop"],
     labour: { pc: 90, laptop: 90 },
-    desc: "Deep scans, cleanup, browser reset, and core updates. Optional AV installation.",
-    eta: "1.5–3 hours",    
+    desc: "Deep scans, cleanup, browser reset, core updates, and tool removal",
+    eta: "SSD: 2-3 hours, HDD 1-2 days",    
   },
+  {
+    key: "ssdupgrade", label: "SSD Upgrade",
+    devices: ["pc", "laptop"],
+    labour: { pc: 100, laptop: 100 },
+    requiresPart: true, 
+    partdefault: { pc: 80, laptop: 70 },
+    discountGroup: "open",
+    discountPrice: { pc: 0, laptop: 40 },    
+    desc: "Clone data to SSD, install new drive, test compatability, and update drivers.",
+    eta: "24 hours",    
+  },  
   {
     key: "upgrade", label: "System Upgrade",
     devices: ["pc", "laptop"],
-    labour: { pc: 80, laptop: 80 },
-    teardownGroup: "front-open",
-    teardownIncrementLabour: { pc: 40, laptop: 40 },    
-    desc: "Install RAM/SSD/other components and optimize settings for better performance.",
-    eta: "1–2 hours",    
+    labour: { pc: 80, laptop: 120 },
+    discountGroup: "open",
+    discountPrice: { pc: 0, laptop: 40 },    
+    desc: "Install component (RAM, GPU, CPU, network card, etc.) and optimize settings for better performance.",
+    eta: "1-2 hours",
   },
   {
     key: "swtroubleshoot", label: "Software Troubleshooting",
     devices: ["pc", "laptop", "mobile"],
     labour: { pc: 80, laptop: 80, mobile: 80 },
     desc: "Fix crashes, configuration issues, and app errors; apply updates and tuning.",
-    eta: "1–2 hours",    
-  },
+    eta: "1-2 hours",
+  }
 ];
 
 export const visibleAddons: ItemDef[] = [
@@ -140,26 +151,30 @@ export const visibleAddons: ItemDef[] = [
     labour: { mobile: 10 },
     partdefault: { mobile: 10 },
     requiresPart: true,
-    desc: "Install a tempered glass or film protector to guard against scratches and cracks.",
-    eta: "15–30 min",
+    discountGroup: "cleaning",
+    discountPrice: { mobile: 5 },    
+    desc: "Install a tempered glass or film protector to guard against scratches and cracks. Includes device cleaning.",
+    eta: "15-30 min",
   },
   {
     key: "backup",
     label: "Data Backup/Transfer",
     devices: ["pc", "laptop", "mobile"],
     labour: { pc: 40, laptop: 40, mobile: 40 },
-    desc: "Transfer files, photos, and documents to a new device or backup drive.",
-    eta: "30–90 min (depends on data size)",
+    desc: "Transfer user files (photos, documents, downloads, etc.) to a new device or backup drive.",
+    eta: "SSD: 1-2 hours, HDD: 24 hours (depends on data size)",
   },
   {
     key: "case",
     label: "Protective Case",
     devices: ["mobile"],
-    labour: { mobile: 0 },
+    labour: { mobile: 10 },
     partdefault: { mobile: 25 },
     requiresPart: true,
-    desc: "Provide and fit a durable case to protect your phone from drops and daily wear.",
-    eta: "10–15 min",
+    discountGroup: "cleaning",
+    discountPrice: { mobile: 5 },    
+    desc: "Provide and fit a durable case to protect your phone from drops and daily wear, includes device cleaning.",
+    eta: "10-15 min",
   },
   {
     key: "tuneup",
@@ -167,15 +182,17 @@ export const visibleAddons: ItemDef[] = [
     devices: ["pc", "laptop", "mobile"],
     labour: { pc: 60, laptop: 60, mobile: 60 },
     desc: "Clean temporary files, optimize startup, update apps/OS, and improve performance.",
-    eta: "1–2 hours",
+    eta: "1-2 hours",
   },
   {
     key: "cleaning",
     label: "Device Cleaning",
     devices: ["pc", "laptop", "mobile"],
-    labour: { pc: 40, laptop: 60, mobile: 40 },
+    labour: { pc: 40, laptop: 60, mobile: 20 },
+    discountGroup: "cleaning",
+    discountPrice: { mobile: 10 },    
     desc: "Physical cleaning of fans, vents, and screens to reduce heat and extend lifespan.",
-    eta: "30–60 min",
+    eta: "30-60 min",
   },
   {
     key: "cooling",
@@ -183,6 +200,9 @@ export const visibleAddons: ItemDef[] = [
     devices: ["pc", "laptop"],
     labour: { pc: 40, laptop: 60 },
     desc: "Replace thermal paste, clean dust, and improve airflow to keep your system cooler.",
-    eta: "1–2 hours",
+    eta: "30-60 minutes",
+    discountGroup: "open",
+    requiresPart: true, 
+    discountPrice: { pc: 30, laptop: 40 },    
   },
 ];

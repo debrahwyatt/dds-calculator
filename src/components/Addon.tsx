@@ -1,7 +1,5 @@
-// Components/Addon.tsx
 import { useState } from "react";
 import type { ItemDef, DeviceKey } from "../Config/config";
-import { labourFor } from "../Config/config";
 import AddonDetails from "./AddonDetails";
 
 export default function Addon({
@@ -20,7 +18,6 @@ export default function Addon({
   onPartChange?: (key: string, value?: number) => void;
 }) {
   const { key, label } = addon;
-  const labour = labourFor(addon, device);
 
   const [expanded, setExpanded] = useState(false);
   const toggleExpanded = () => setExpanded(v => !v);

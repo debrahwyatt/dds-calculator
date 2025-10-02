@@ -86,19 +86,13 @@ export default function AddonDetails({
                   onChange={handlePartInput}
                   aria-label={`${label} part price`}
                 />
-                {/* hide default hint when overriding */}
-                {!hasPartOverride && (
-                  <span className="hint">
-                    Default for {device}: {fmt(defaultPart || 0)}
-                  </span>
-                )}
               </span>
             </span>
           </div>
         )}
 
         <div className="row">
-          <span className="label">Subtotal (no shipping)</span>
+          <span className="label">Subtotal</span>
           <span className="value">{fmt(math.subtotal)}</span>
         </div>
 
