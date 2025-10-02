@@ -1,6 +1,8 @@
 // Components/Addon.tsx
+import { useState } from "react";
 import type { ItemDef, DeviceKey } from "../Config/config";
-import { labourFor, partPriceFor } from "../Config/config";
+import { labourFor } from "../Config/config";
+import AddonDetails from "./AddonDetails";
 
 export default function Addon({
   addon,
@@ -17,47 +19,41 @@ export default function Addon({
   partValue?: number;
   onPartChange?: (key: string, value?: number) => void;
 }) {
-  const { key, label, requiresPart } = addon;
+  const { key, label } = addon;
   const labour = labourFor(addon, device);
-  const defaultPart = partPriceFor(addon, device);
-  const effectivePart = partValue ?? defaultPart;
 
-  const handlePartInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.currentTarget.value.trim();
-    if (!onPartChange) return;
-    if (v === "") {
-      onPartChange(key, undefined);
-      return;
-    }
-    const num = Number(v);
-    onPartChange(key, Number.isFinite(num) ? num : undefined);
-  };
+  const [expanded, setExpanded] = useState(false);
+  const toggleExpanded = () => setExpanded(v => !v);
 
   return (
-    <label className="radio option">
-      <input
-        type="checkbox"
-        name={`addon_${key}`}
-        value={key}
-        checked={checked}
-        onChange={() => onToggle(key)}
-      />
-      <span className="option-label">
-        {label} – Labour: ${labour}
-      </span>
-
-      {checked && requiresPart && (
+    <div className={`service option ${expanded ? "expanded" : ""}`}>
+      <label className="radio option-label" onClick={toggleExpanded}>
         <input
-          className="part-input no-spin"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          placeholder={defaultPart > 0 ? defaultPart.toString() : "0.00"}
-          value={Number.isFinite(effectivePart) ? String(effectivePart) : ""}
-          onChange={handlePartInput}
-          aria-label={`${label} part price`}
+          type="checkbox"
+          name={`addon_${key}`}
+          value={key}
+          checked={checked}
+          onChange={(e) => {
+            e.stopPropagation();
+            const nextChecked = !checked;
+            onToggle(key);
+            if (nextChecked) setExpanded(true);   // auto-open when checking
+            if (!nextChecked) setExpanded(false); // close when unchecking
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <span className="text">{label}</span>
+      </label>
+
+      {/* Only render details when selected AND expanded */}
+      {checked && expanded && (
+        <AddonDetails
+          addon={addon}
+          device={device}
+          partValue={Number.isFinite(partValue ?? NaN) ? (partValue as number) : undefined}
+          onPartChange={onPartChange}
         />
       )}
-    </label>
+    </div>
   );
 }

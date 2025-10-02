@@ -211,3 +211,7 @@ a:hover { text-decoration: underline; }
   gap: .6rem;
   height: 2.75rem;
 }
+
+.part-input {
+  text-align: right;
+}

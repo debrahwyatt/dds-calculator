@@ -1,6 +1,8 @@
 // Components/Service.tsx
+import { useState } from "react";
 import type { ItemDef, DeviceKey } from "../Config/config";
 import { labourFor, partPriceFor } from "../Config/config";
+import ServiceDetails from "./ServiceDetails";
 
 export default function Service({
   service,
@@ -14,54 +16,53 @@ export default function Service({
   checked: boolean;
   onToggle: (key: string) => void;
   device: DeviceKey;
-  partValue?: number; // override (if set)
+  partValue?: number;
   onPartChange?: (key: string, value?: number) => void;
 }) {
-  const { key, label, requiresPart } = service;
+  const { key, label } = service;
   const labour = labourFor(service, device);
 
-  // default per-device part
   const defaultPart = partPriceFor(service, device);
-  // the value shown/used: override if present, otherwise default
   const effectivePart = partValue ?? defaultPart;
 
-  const handlePartInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const v = e.currentTarget.value.trim();
-    if (!onPartChange) return;
-    if (v === "") {
-      onPartChange(key, undefined); // clears override → falls back to default
-      return;
-    }
-    const num = Number(v);
-    onPartChange(key, Number.isFinite(num) ? num : undefined);
-  };
+  const [expanded, setExpanded] = useState(false);
+
+  const toggleExpanded = () => setExpanded(v => !v);
 
   return (
-    <label className="radio option">
-      <input
-        type="checkbox"
-        name={`service_${key}`}
-        value={key}
-        checked={checked}
-        onChange={() => onToggle(key)}
-      />
-      <span className="option-label">
-        {label} – Labour: ${labour}
-      </span>
-
-      {/* Manual part override (only when selected & requires part) */}
-      {checked && requiresPart && (
+    <div className={`service option ${expanded ? "expanded" : ""}`}>
+      <label className="radio option-label" onClick={toggleExpanded}>
         <input
-          className="part-input no-spin"
-          type="number"
-          inputMode="decimal"
-          step="0.01"
-          placeholder={defaultPart > 0 ? defaultPart.toString() : "0.00"}
-          value={Number.isFinite(effectivePart) ? String(effectivePart) : ""}
-          onChange={handlePartInput}
-          aria-label={`${label} part price`}
+          type="checkbox"
+          name={`service_${key}`}
+          value={key}
+          checked={checked}
+          onChange={(e) => {
+            e.stopPropagation();
+            // flip checked
+            const nextChecked = !checked;
+            onToggle(key);
+
+            // If turning ON, optionally auto-expand
+            if (nextChecked) setExpanded(true);
+
+            // If turning OFF, force-collapse details so they disappear
+            if (!nextChecked) setExpanded(false);
+          }}
+          onClick={(e) => e.stopPropagation()}
+        />
+        <span className="text">{label}</span>
+      </label>
+
+      {/* Only render details when selected AND expanded */}
+      {checked && expanded && (
+        <ServiceDetails
+          service={service}
+          device={device}
+          partValue={Number.isFinite(effectivePart) ? effectivePart : undefined}
+          onPartChange={onPartChange}
         />
       )}
-    </label>
+    </div>
   );
 }
